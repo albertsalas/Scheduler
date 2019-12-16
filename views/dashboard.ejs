@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <%- include('partials/header'); -%>
+        <title>Dashboard</title>
+</head>
+
+<body class="bg-dark text-white">
+    <h1 class="text-center m-3">Appointments</h1>
+    <h3>Invitation Link: PLACEHOLDER</h3>
+    <div class="d-flex text-center">
+        <table class="table table-dark">
+            <thead>
+                <tr>
+                    <th scope="col">Date</th>
+                    <th scope="col">Start Time</th>
+                    <th scope="col">Duration</th>
+                    <th scope="col">Booked by</th>
+                    <th scope="col"><button id="addNewTimeSlot" class="btn btn-success" data-toggle="modal" data-target="#addModal">Add New Time Slot</button></th>
+                </tr>
+            </thead>
+            <tbody>
+                <% for(var i=0; i<appts.length; i++) {%>
+                    <tr>
+                        <td>
+                            <%= appts[i].date.toLocaleDateString() %>
+                        </td>
+                        <td>
+                            <%= appts[i].start_time.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) %>
+                        </td>
+                        <td>
+                            <%= (appts[i].end_time - appts[i].start_time) / 3600000 %> hour(s)</td>
+                        <td>
+                            <%= appts[i].booking_name %>
+                        </td>
+                        <td>
+                            <button class="btn btn-primary m-2 detailsButton" value="<%= appts[i].id %>">Details</button>
+                            <button class="btn btn-danger m-2 deleteButton" value="<%= appts[i].id %>">Delete</button>
+                        </td>
+                    </tr>
+                    <% } %>
+            </tbody>
+        </table>
+    </div>
+
+    <div id="deleteModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="deleteModalTitle" style="display: none;" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered modal-sm" role="document">
+            <div class="modal-content bg-dark">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteModalTitle">Delete Time Slot</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                          <span aria-hidden="true" class="text-white">&times;</span>
+                        </button>
+                </div>
+                <div class="modal-body container-fluid">
+                    <div id="timeSlotInfo">
+
+                    </div>
+                    <p>Are you sure you want to remove this time slot? <br>This cannot be undone.</p>
+                </div>
+                <div class="modal-footer justify-content-center">
+                    <div>
+                        <button class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                        <button id="deleteConfirmation" class="btn btn-danger">Yes, remove it!</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="addModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="addModalTitle" style="display: none;" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered modal-sm" role="document">
+            <div class="modal-content bg-dark">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addModalTitle">Add New Time Slot</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                          <span aria-hidden="true" class="text-white">&times;</span>
+                    </button>
+                </div>
+                <form id="addForm">
+                    <div class="modal-body container-fluid">
+                        <div class="m-2">
+                            <label for="date">Date: </label>
+                            <input class="form-control" type="date" id="dateInput" required>
+                        </div>
+                        <div class="m-2">
+                            <label for="startTime">Start Time: </label>
+                            <input class="form-control" type="time" id="startInput" required>
+                        </div>
+                        <div class="m-2">
+                            <label for="endTime">End Time: </label>
+                            <input class="form-control" type="time" id="endInput" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer justify-content-center">
+                        <div>
+                            <button class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                            <button id="addConfirmation" type="submit" class="btn btn-success">Add</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <%- include('partials/footer'); -%>
+</body>
+
+<script>
+    $(document).ready(function() {
+        $(document).on('click', '.detailsButton', function(e) {
+            $.ajax({
+                    method: "GET",
+                    url: "/recipeSummary",
+                    dataType: "json",
+                    data: {
+                        "id": $(this).attr("value")
+                    }
+                })
+                .done(function(result) {});
+        });
+
+        $(document).on('click', '.deleteButton', function(e) {
+            var timeSlotId = $(this).attr("value");
+            $("#deleteConfirmation").attr("value", timeSlotId);
+            $("#timeSlotInfo").empty();
+            $.ajax({
+                    method: "GET",
+                    url: "/dashboard/timeslot",
+                    dataType: "json",
+                    data: {
+                        "id": timeSlotId
+                    }
+                })
+                .done(function(results) {
+                    console.log(results);
+                    $("#timeSlotInfo").append("<div> Start Time: " + results[0] + "</div>");
+                    $("#timeSlotInfo").append("<div> End Time: " + results[1] + "</div>");
+                });
+            $('#deleteModal').modal('show');
+        });
+
+        $(document).on('click', '#deleteConfirmation', function(e) {
+            var timeSlotId = $(this).attr("value");
+            console.log(timeSlotId);
+            $.ajax({
+                    method: "POST",
+                    url: "/dashboard/delete",
+                    dataType: "json",
+                    data: {
+                        "id": timeSlotId
+                    }
+                })
+                .done(function() {});
+            window.location.href = window.location;
+        });
+
+        $(document).on('click', '#addConfirmation', function(e) {
+            $.ajax({
+                    method: "POST",
+                    url: "/dashboard/add",
+                    dataType: "json",
+                    data: {
+                        date: $("#dateInput").val(),
+                        start_time: $("#startInput").val(),
+                        end_time: $("#endInput").val()
+                    }
+                })
+                .done(function(results) {
+                    console.log(results);
+                });
+        });
+    });
+</script>
+
+</html>
