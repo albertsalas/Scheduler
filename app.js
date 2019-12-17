@@ -48,32 +48,36 @@ app.get("/", function(req, res) {
     });
 });
 
-app.get("/dashboard", function(req, res) {
+app.get("/dashboard",  function(req, res) {
     let userId = req.session.username;
     // console.log(req.session);
     // console.log("in dashboard");
     // console.log(req.session.loggedin)
+    // let username = await getUsername(userId);
     if (req.session.loggedin) {
         connnection.query(
             `SELECT u.username, t.*
             FROM users u
-            inner join time_slots t on u.id = t.user_id
+            left join time_slots t on u.id = t.user_id
             WHERE u.id = "${userId}"`,
             (error, results, fields) => {
-                // console.log(results);
+                console.log(results);
                 if (error) throw error;
                 var date = new Date();
                 var time_slots = [];
-                for (var i = 0; i < results.length; ++i) {
-                    if (results[i].end_time > date) {
-                        time_slots.push(results[i]);
-                        // console.log(time_slots[i].id)
+                var username = results[0].username
+                if (results.length > 0) {
+                    for (var i = 0; i < results.length; ++i) {
+                        if (results[i].end_time > date) {
+                            time_slots.push(results[i]);
+                            // console.log(time_slots[i].id)
+                        }
                     }
                 }
                 res.render('dashboard', {
                     time_slots: time_slots,
-                    username: time_slots[0].username,
-                    userId: time_slots[0].user_id
+                    username: username,
+                    userId: userId
                 });
             }
         ); // query
@@ -116,7 +120,7 @@ app.post("/dashboard/delete", function(req, res) {
 });
 
 app.post("/dashboard/add", function(req, res) {
-    console.log(req.body);
+    // console.log(req.body);
     var date = req.body.date;
     var start_time = date + " " + req.body.start_time;
     var end_time = date + " " + req.body.end_time;
@@ -141,7 +145,7 @@ app.post("/createAccount", function(req, res) {
     connnection.query(
         `SELECT * FROM users WHERE username = "${username}"`,
         (error, results, fields) => {
-            console.log(results);
+            // console.log(results);
             if (error) {
                 throw (error);
             }
@@ -151,7 +155,7 @@ app.post("/createAccount", function(req, res) {
             else {
                 validUsername = true;
             }
-            console.log(validUsername);
+            // console.log(validUsername);
             if (validUsername) {
                 bcrypt.hash(password, saltRounds, function(err, hash) {
                     if (err) throw error;
@@ -166,7 +170,7 @@ app.post("/createAccount", function(req, res) {
                 });
             }
             else {
-                console.log("not valid username")
+                // console.log("not valid username")
             }
         }); // query
 });
@@ -201,18 +205,21 @@ app.post("/signIn", function(req, res) {
                     if (resp === true) {
                         req.session.loggedin = true;
                         req.session.username = userId;
-                        console.log("login success");
+                        // console.log("login success");
                         res.send({
                             success: true
                         });
                     }
                     else {
-                        console.log("wrong password");
+                        // console.log("wrong password");
                     }
                 });
             }
             else {
-                console.log("not valid username");
+                // console.log("not valid username");
+                res.send({
+                    success: false
+                })
             }
         }); // query
 });
@@ -233,9 +240,23 @@ app.get('/logout', function(req, res, next) {
             }
         });
     }
-
-
 });
+
+// function getUsername(userId) {
+//     return new Promise(function(resolve, reject) {
+//         connnection.query(
+//             `SELECT username FROM users WHERE id = "${userId}";`,
+//             (error, results, fields) => {
+//                 var username = results;
+//                 console.log(username);
+//                 if (error) {
+//                     return reject(error);
+//                 };
+//                 resolve(results[0]);
+//             }
+//         ); // query
+//     });
+// }
 
 // running server
 app.listen(process.env.PORT || 3000, process.env.IP, function() {

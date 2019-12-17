@@ -31,6 +31,9 @@
         <div class="alert alert-danger d-none" role="alert" id="usernameError">
             Username already taken!
         </div>
+        <div class="alert alert-danger d-none" role="alert" id="loginError">
+            Invalid login details
+        </div>
         <div class="alert alert-success d-none" role="alert" id="welcomeNewAccount">
             Welcome! Please sign in to your new account to start using Scheduler.
         </div>
@@ -78,7 +81,11 @@
             })
             .done(function(results) {
                 console.log(results);
-                window.location.href = "dashboard"
+                if (results.success == false){
+                    $('#loginError').toggleClass("d-none");
+                } else {
+                    window.location.href = "dashboard"
+                }
             });
     });
 </script>

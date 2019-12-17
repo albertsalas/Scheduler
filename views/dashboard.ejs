@@ -12,7 +12,6 @@
     </div>
     <h1 class="text-center m-3">Time Slots</h1>
     <h2 id="userWelcome" value="<%= userId %>">Welcome, <%= username %> </h2>
-    <h3>Invitation Link: PLACEHOLDER</h3>
     <div class="d-flex text-center">
         <table class="table table-dark">
             <thead>
@@ -37,7 +36,7 @@
                             <%= (time_slots[i].end_time - time_slots[i].start_time) / 3600000 %> hour(s)</td>
                         <td>
                             <% if (time_slots[i].booking_name == null){ %>
-                                Nobody
+                                Not Booked
                             <% } else { %>
                                 <%= time_slots[i].booking_name %>
                             <% } %>
@@ -103,9 +102,14 @@
                         </div>
                     </div>
                     <div class="modal-footer justify-content-center">
-                        <div>
-                            <button class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                            <button id="addConfirmation" type="submit" class="btn btn-success">Add</button>
+                        <div class="text-center">
+                            <div>
+                                <button class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                                <button id="addConfirmation" type="submit" class="btn btn-success">Add</button>
+                            </div>
+                            <div class="alert alert-danger d-none m-2" role="alert" id="timeError">
+                                Please check your times!
+                            </div>
                         </div>
                     </div>
                 </form>
@@ -172,8 +176,24 @@
         });
 
         $(document).on('click', '#addConfirmation', function(e) {
+            
             var userId = $("#userWelcome").attr("value");
-            $.ajax({
+            var d = $("#dateInput").val();
+            var start_time = $("#startInput").val();
+            var end_time = $("#endInput").val();
+            console.log(d)
+            console.log(start_time);
+            console.log(end_time);
+            var start = new Date(d + "T" + start_time + "Z");
+            var end = new Date(d + "T" + end_time + "Z");
+            console.log(start);
+            console.log(end);
+            console.log(end < start);
+            if (end <= start){
+                e.preventDefault();
+                $('#timeError').toggleClass("d-none");
+            } else{
+                $.ajax({
                     method: "POST",
                     url: "/dashboard/add",
                     dataType: "json",
@@ -187,6 +207,7 @@
                 .done(function(results) {
                     console.log(results);
                 });
+            }
         });
         
             $('#logout').on('click', function(e) {
