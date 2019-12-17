@@ -7,7 +7,11 @@
 </head>
 
 <body class="bg-dark text-white">
-    <h1 class="text-center m-3">Appointments</h1>
+    <div class="d-flex flex-row-reverse m-4">
+        <button id="logout" class="btn btn-warning">Logout</button>
+    </div>
+    <h1 class="text-center m-3">Time Slots</h1>
+    <h2 id="userWelcome" value="<%= userId %>">Welcome, <%= username %> </h2>
     <h3>Invitation Link: PLACEHOLDER</h3>
     <div class="d-flex text-center">
         <table class="table table-dark">
@@ -21,22 +25,27 @@
                 </tr>
             </thead>
             <tbody>
-                <% for(var i=0; i<appts.length; i++) {%>
+                <% for(var i=0; i<time_slots.length; i++) {%>
                     <tr>
                         <td>
-                            <%= appts[i].date.toLocaleDateString() %>
+                            <%= time_slots[i].date.toLocaleDateString() %>
                         </td>
                         <td>
-                            <%= appts[i].start_time.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) %>
+                            <%= time_slots[i].start_time.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) %>
                         </td>
                         <td>
-                            <%= (appts[i].end_time - appts[i].start_time) / 3600000 %> hour(s)</td>
+                            <%= (time_slots[i].end_time - time_slots[i].start_time) / 3600000 %> hour(s)</td>
                         <td>
-                            <%= appts[i].booking_name %>
+                            <% if (time_slots[i].booking_name == null){ %>
+                                Nobody
+                            <% } else { %>
+                                <%= time_slots[i].booking_name %>
+                            <% } %>
+                            
                         </td>
                         <td>
-                            <button class="btn btn-primary m-2 detailsButton" value="<%= appts[i].id %>">Details</button>
-                            <button class="btn btn-danger m-2 deleteButton" value="<%= appts[i].id %>">Delete</button>
+                            <button class="btn btn-primary m-2 detailsButton" value="<%= time_slots[i].id %>">Details</button>
+                            <button class="btn btn-danger m-2 deleteButton" value="<%= time_slots[i].id %>">Delete</button>
                         </td>
                     </tr>
                     <% } %>
@@ -108,6 +117,13 @@
 
 <script>
     $(document).ready(function() {
+        $.ajax({
+                    method: "GET",
+                    url: "/dashboard",
+                    dataType: "json",
+                    data: {
+                    }
+                })
         $(document).on('click', '.detailsButton', function(e) {
             $.ajax({
                     method: "GET",
@@ -156,6 +172,7 @@
         });
 
         $(document).on('click', '#addConfirmation', function(e) {
+            var userId = $("#userWelcome").attr("value");
             $.ajax({
                     method: "POST",
                     url: "/dashboard/add",
@@ -163,13 +180,43 @@
                     data: {
                         date: $("#dateInput").val(),
                         start_time: $("#startInput").val(),
-                        end_time: $("#endInput").val()
+                        end_time: $("#endInput").val(),
+                        userId: userId
                     }
                 })
                 .done(function(results) {
                     console.log(results);
                 });
         });
+        
+            $('#logout').on('click', function(e) {
+            // Do not submit until I am ready
+            e.preventDefault();
+            $.ajax({
+                type: "GET",
+                url: "/logout",
+                dataType: "json",
+                success: function(result, status) {
+                    console.log("got logout status back", result);
+                    if (result.successful) {
+                        // This will navigate to wherever i say...
+                        window.location.href = '/';
+                    }
+                    else {
+                        // Show an error message or something and stay here
+                        $('#message').html(result.message);
+                        $('#message').show();
+                    }
+                },
+                error: function(xhr, status, error) {
+                    err = eval("error: (" + xhr.responseText + ")");
+                    console.error(err);
+                },
+                complete: function(data, status) { //optional, used for debugging purposes
+                    console.log(status);
+                }
+            });
+        })
     });
 </script>
 
